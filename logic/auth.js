@@ -137,6 +137,17 @@ async function isRegistered() {
     }
 }
 
+// Returns true if the lnd wallet is unlocked.
+async function isWalletUnlocked() {
+    try {
+        const status = await lndApiService.getStatus();
+
+        return status.data.unlocked;
+    } catch (error) {
+        return false;
+    }
+}
+
 // Log the user into the device. Caches the password if login is successful. Then returns jwt.
 async function login(user) {
     try {
@@ -215,12 +226,13 @@ async function register(user, seed) {
         throw new NodeError('Unable to generate JWT');
     }
 
-    //initialize lnd wallet
-    try {
-        await lndApiService.initializeWallet(user.plainTextPassword, seed, jwt);
-    } catch (error) {
-        await diskLogic.deleteUserFile();
-        throw new NodeError(error.response.data);
+    if (await isWalletUnlocked() === false) {
+        try {
+            await lndApiService.initializeWallet(user.plainTextPassword, seed, jwt);
+        } catch (error) {
+            await diskLogic.deleteUserFile();
+            throw new NodeError(error.response.data);
+        }
     }
 
     //return token
@@ -245,6 +257,7 @@ module.exports = {
     getChangePasswordStatus,
     hashCredentials,
     isRegistered,
+    isWalletUnlocked,
     getInfo,
     seed,
     login,

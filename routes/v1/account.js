@@ -68,8 +68,9 @@ router.get('/registered', safeHandler((req, res) =>
 router.post('/register', auth.convertReqBodyToBasicAuth, auth.register, safeHandler(async (req, res, next) => {
 
     const seed = req.body.seed;
+    const walletExists = await authLogic.isWalletUnlocked();
 
-    if (seed.length !== 24) { // eslint-disable-line no-magic-numbers
+    if (!walletExists && seed.length !== 24) { // eslint-disable-line no-magic-numbers
         throw new Error('Invalid seed length');
     }
 
