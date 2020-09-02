@@ -236,11 +236,14 @@ async function register(user, seed) {
         throw new NodeError('Unable to register user');
     }
 
-    //derive Umbrel seed
-    try {
-        await deriveUmbrelSeed(user);
-    } catch (error) {
-        throw new NodeError('Unable to create Umbrel seed');
+    let walletExists = await isWalletUnlocked();
+    if (walletExists === false) {
+        //derive Umbrel seed
+        try {
+            await deriveUmbrelSeed(user);
+        } catch (error) {
+            throw new NodeError('Unable to create Umbrel seed');
+        }
     }
 
     //generate JWt
@@ -252,7 +255,7 @@ async function register(user, seed) {
         throw new NodeError('Unable to generate JWT');
     }
 
-    if (await isWalletUnlocked() === false) {
+    if (walletExists === false) {
         try {
             await lndApiService.initializeWallet(user.plainTextPassword, seed, jwt);
         } catch (error) {
